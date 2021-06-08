@@ -1,0 +1,143 @@
+// VerilogA for 288_SAR_ADC, SAR_CODE, veriloga
+
+`include "constants.vams"
+`include "disciplines.vams"
+
+module SAR_CODE(VDD, compout, sample);
+
+	parameter bits = 8;
+
+	/////////////////////////////////////////////////////////////// Input of System ///////////////////////////////////////////////////////////////////////
+
+	input VDD;  // Input voltage of the system
+	input compout; // Output of comparator
+	input sample;  // Sample Frequency
+    	reg Clk[8:0];  // Clk cycle from the Asynchronous clock
+
+
+	/////////////////////////////////////////////////////////////// Output of System ///////////////////////////////////////////////////////////////////////
+	reg output [Bits-8:0] counter;  // Bits for Bit swap
+	reg output [DACP-8:0] counter;  // DACP output 
+	reg output [DACN-8:0] counter;  // DACN output
+
+
+	/////////////////////////////////////// Digital Flip-Flop Logic // This section take in VDD, Compout, and Clk[8:0] ////////////////////////////////////
+	module DFF(output Q[8:0],output Qbar[8:0],compout,input Clk[8:0],input VDD);
+
+		output  reg  Q[8:0]; 
+
+		output   Qbar; 
+
+		input   compout, Clk[8:0], VDD 
+
+		assign Qbar = ~Q; 
+
+		always @(posedge Clk) 
+
+		begin 
+
+		 if (VDD == 1'b1) //If not at reset 
+
+ 			 Q = 1'b0;
+
+ 		else 
+
+ 		 Q[8:0] = compout
+
+	endmodule 
+
+
+	////////////////////////////////////////////////////// Binary Bits after the inverter in the SAR Logic/////////////////////////////////////////////////
+	module inv1(input Q[8:0], output Bits[8:0]);
+    
+  	  //-- Both the input and the output are "wires"
+   	 wire Q[8:0];
+   	 wire Bits[8:0];
+    
+   	 //-- Assign the inverse of the input, to the output
+   	 assign Bits[8:0] = ~Q[8:0];
+
+	endmodule
+
+
+	///////////////////////////////////////////////////////////// DACN NAND Operation/////////////////////////////////////////////////////////////////////
+	module NAND_N(input Q[8:0], input Clk[8:0],output DACN_NAND) ;
+
+		input Q[8:0], Clk[8:0];
+
+		output DACN_NAND;
+
+		wire DACN_NAND;
+
+		assign DACN_NAND =v (Q[8:0]&Clk[8:0]);
+
+	endmodule
+
+
+	////////////////////////////////////////////////////////////// DACP NAND Operation////////////////////////////////////////////////////////////////////////
+	module NAND_P(input B[8:0], input Clk[8:0],output DACP_NAND) ;
+
+		input Bits[8:0], Clk[8:0];
+
+		output DACP_NAND;
+
+		wire DACP_NAND;
+
+		assign DACP_NAND =v (B[8:0]&Clk[8:0]);
+
+	endmodule
+
+
+	/////////////////////////////////////////////////////// Double inversion after DACN_NAND/////////////////////////////////////////////////////////////////
+	module inv2(input DACN_NAND[8:0], output DACN_inv1[8:0]);
+    
+   	  //-- Both the input and the output are "wires"
+  	  wire DACN_NAND[8:0];
+  	  wire DACN_inv1[8:0];
+    
+  	  //-- Assign the inverse of the input, to the output
+   	  assign DACN_inv1[8:0] = DACN_NAND[8:0];
+
+	endmodule
+
+
+	// Double inversion after DACN_NAND
+	module inv3(input DACN_inv1[8:0], output DACN[8:0]);
+    
+   	  //-- Both the input and the output are "wires"
+    	  wire DACN_inv1[8:0];
+  	  wire DACN[8:0];
+    
+    	  //-- Assign the inverse of the input, to the output
+   	  assign DACN[8:0] = ~DACN_inv1[8:0];
+
+	endmodule
+
+
+	/////////////////////////////////////////////////////////// Double inversion after DACP_NAND///////////////////////////////////////////////////////
+	module inv2(input DACP_NAND[8:0], output DACP_inv2[8:0]);
+    
+   	  //-- Both the input and the output are "wires"
+   	  wire DACP_NAND[8:0];
+    	  wire DACP_inv1[8:0];
+    
+   	  //-- Assign the inverse of the input, to the output
+    	  assign DACP_inv1[8:0] = DACP_NAND[8:0];
+
+	endmodule
+
+
+	// Double inversion after DACN_NAND
+	module inv3(input DACP_inv2[8:0], output DACP[8:0]);
+    
+   	  //-- Both the input and the output are "wires"
+    	  wire DACP_inv1[8:0];
+   	  wire DACP[8:0];
+    
+    	  //-- Assign the inverse of the input, to the output
+    	  assign DACP[8:0] = ~DACP_inv1[8:0];
+
+	endmodule
+
+
+endmodule
